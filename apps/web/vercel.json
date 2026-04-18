@@ -4,5 +4,8 @@
   "outputDirectory": "dist",
   "installCommand": "echo 'deferred to buildCommand so it runs from monorepo root'",
   "framework": null,
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/((?!assets/|icon|favicon|manifest|registerSW|sw\\.js|workbox|.*\\.[a-z]+$).*)", "destination": "/index.html" }
+  ]
 }
