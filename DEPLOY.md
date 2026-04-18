@@ -123,5 +123,7 @@ Push to `main`. Railway auto-deploys each service whose root directory changed.
 
 - **"TURNSTILE_SECRET_KEY must be set"** — either set it via `railway variables --set TURNSTILE_SECRET_KEY=... --service plugqueue-api` or set `NODE_ENV=development` on the API service.
 - **Web service 404s on routes** — the Vue Router uses history mode; make sure `plugqueue-web`'s `railway.json` has a SPA fallback config, or serve via the API.
-- **Worker can't connect to DB** — verify it has `DATABASE_URL` set to `${{Postgres.DATABASE_URL}}` (the exact service name matters — check Railway dashboard for the actual casing).
+- **Worker can't connect to DB** — verify it has `DATABASE_URL` set to `${{Postgres.DATABASE_URL}}` (the exact service name matters — check Railway dashboard for the actual casing). If the dashboard shows `postgres`/`redis` in lowercase, re-run the helper with overrides: `PG_SVC=postgres REDIS_SVC=redis ./scripts/setup-railway.sh`.
 - **`railway add --database postgres` failed** — the syntax changed in CLI v4. Try `railway add` and pick Postgres interactively.
+- **Web service serves blank page or 404 on deep links** — the `plugqueue-web` start command uses `npx serve -s dist` which enables SPA fallback. If `npx` is slow on cold start, add `serve` to `apps/web/package.json` dependencies so it's cached in the build.
+- **`VITE_TURNSTILE_SITE_KEY` mismatch** — if you skip the Turnstile secret (dev-mode API) but a stale `VITE_TURNSTILE_SITE_KEY` is set on `plugqueue-web`, the widget will render and block joins. Either set both or neither.

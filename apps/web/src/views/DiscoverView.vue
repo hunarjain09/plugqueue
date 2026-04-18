@@ -28,9 +28,9 @@ onMounted(async () => {
     locationReady.value = true;
     await store.fetchNearby(pos.lat, pos.lng);
   } catch {
-    // Fallback: load San Jose area stations
+    // Fallback: station coords (single-station MVP — always show ea-7leaves)
     locationReady.value = true;
-    await store.fetchNearby(37.377, -121.9358);
+    await store.fetchNearby(37.3884, -121.9915);
   }
 });
 </script>

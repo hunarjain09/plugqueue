@@ -1,4 +1,4 @@
-# PlugQueue — Deep Architecture Wiki
+/mod# PlugQueue — Deep Architecture Wiki
 
 > Privacy-first, community-driven EV charging queue management PWA.
 > Vue 3 + Hono + Postgres/PostGIS + Redis on Railway.

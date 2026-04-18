@@ -20,7 +20,7 @@ function accept() {
       v-if="true"
       class="fixed inset-0 z-[110] flex items-end justify-center bg-black/40 backdrop-blur-sm"
     >
-      <div class="w-full max-w-md bg-surface-container-lowest rounded-t-[2rem] shadow-[0_-20px_60px_rgba(0,0,0,0.3)] overflow-hidden">
+      <div class="w-full max-w-md bg-surface-container-lowest rounded-t-[2rem] shadow-[0_-20px_60px_rgba(0,0,0,0.3)] max-h-[85dvh] overflow-y-auto overscroll-contain">
         <div class="px-8 pt-8 pb-2">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">

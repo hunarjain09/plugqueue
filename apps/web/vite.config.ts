@@ -48,6 +48,15 @@ export default defineConfig({
     },
   },
   server: {
+    // Accept *.localhost so portless.sh can front the dev server at
+    // https://plugqueue.localhost. Plain http://localhost:5173 keeps working.
+    // Tunnel hosts (.loca.lt, .trycloudflare.com, .ngrok.io) allowed for mobile testing.
+    allowedHosts: ['.localhost', '.loca.lt', '.trycloudflare.com', '.ngrok.io', '.ngrok-free.app', '.ngrok-free.dev', '.ngrok.dev'],
+    // When running under portless, its HTTPS proxy terminates at :443 and HMR
+    // needs to connect back through it with wss. Opt in via PORTLESS=1.
+    hmr: process.env.PORTLESS
+      ? { protocol: 'wss', clientPort: 443, host: process.env.PORTLESS_HOST || 'plugqueue.localhost' }
+      : undefined,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

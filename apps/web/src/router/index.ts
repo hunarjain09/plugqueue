@@ -12,6 +12,10 @@ export const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/s/ea-7leaves',
+    },
+    {
+      path: '/discover',
       name: 'discover',
       component: () => import('@/views/DiscoverView.vue'),
     },

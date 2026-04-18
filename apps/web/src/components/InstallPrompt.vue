@@ -63,7 +63,7 @@ function dismiss() {
       class="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm"
       @click.self="dismiss"
     >
-      <div class="w-full max-w-md bg-surface-container-lowest rounded-t-[2rem] shadow-[0_-20px_60px_rgba(0,0,0,0.3)] overflow-hidden">
+      <div class="w-full max-w-md bg-surface-container-lowest rounded-t-[2rem] shadow-[0_-20px_60px_rgba(0,0,0,0.3)] max-h-[85dvh] overflow-y-auto overscroll-contain">
         <!-- Header gradient -->
         <div class="relative bg-gradient-to-br from-primary to-primary-container p-8 pb-12 overflow-hidden">
           <div class="absolute -top-16 -right-16 w-56 h-56 bg-white/10 rounded-full blur-3xl"></div>

@@ -57,6 +57,19 @@ npm run dev:web
 
 A root-level `.env` is auto-loaded: the API/worker/cron use `tsx --env-file=../../.env` and the web app uses Vite's `envDir: '../..'`. Copy [`.env.example`](.env.example) to `.env` and fill in the VAPID keys and (optional for dev) Turnstile keys.
 
+### HTTPS local dev (optional)
+
+Service workers on `http://localhost` work, but Web Push subscription UX and some iOS Safari behaviors are stricter under real HTTPS. To get a stable HTTPS `*.localhost` URL (also handy for scanning QR codes from a phone on the same Wi-Fi), use [portless.sh](https://portless.sh):
+
+```bash
+npm install -g portless                                        # one-time
+PORTLESS=1 portless plugqueue npm run dev:web                  # then open https://plugqueue.localhost
+```
+
+On first run portless generates a local CA, trusts it, and binds port 443. The `PORTLESS=1` env var flips Vite's HMR config to reach the browser back through the HTTPS proxy (`wss://plugqueue.localhost`). Override the hostname with `PORTLESS_HOST=myname.localhost` if you pass a different name to `portless`.
+
+Skipping portless leaves `http://localhost:5173` untouched — no setup cost for anyone who doesn't need HTTPS.
+
 ## Deployment
 
 The free-tier Railway flow — 4 services on `.up.railway.app` subdomains, no custom DNS — is documented in [DEPLOY.md](DEPLOY.md). A helper script at `scripts/setup-railway.sh` seeds environment variables, generates VAPID keys, enables PostGIS, and runs migrations.

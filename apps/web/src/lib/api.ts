@@ -7,6 +7,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: {
       'Content-Type': 'application/json',
       'x-device-hash': deviceHash,
+      'ngrok-skip-browser-warning': 'true',
       ...options.headers,
     },
   });

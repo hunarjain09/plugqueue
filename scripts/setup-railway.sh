@@ -39,8 +39,13 @@ SVC_API="plugqueue-api"
 SVC_WORKER="plugqueue-worker"
 SVC_CRON="plugqueue-cron"
 SVC_WEB="plugqueue-web"
-PG_SVC="Postgres"      # default name when added via `railway add --database postgres`
-REDIS_SVC="Redis"
+
+# The Railway dashboard names managed DB services "Postgres"/"Redis" (casing
+# matters for ${{Postgres.DATABASE_URL}} variable references). If yours differ
+# (e.g. lowercase "postgres" when added via a specific CLI path), override:
+#   PG_SVC=Postgres REDIS_SVC=Redis ./scripts/setup-railway.sh
+PG_SVC="${PG_SVC:-Postgres}"
+REDIS_SVC="${REDIS_SVC:-Redis}"
 
 # ─── Turnstile (optional) ──────────────────────────────────
 read -rp "Turnstile secret key (leave blank to run API in development mode): " TURNSTILE_SECRET
@@ -76,9 +81,15 @@ WEB_URL="https://$WEB_DOMAIN_RAW"
 API_WS_URL="wss://$API_DOMAIN_RAW"
 
 # ─── Helper to set a variable ──────────────────────────────
+# Railway CLI v4 exposes both `railway variables --set` (legacy) and
+# `railway variable set` (current). We try the current form first and fall
+# back to the legacy form so the script keeps working across CLI minor
+# versions.
 set_var() {
   # $1 service name, $2 KEY=VALUE
-  railway variables --service "$1" --set "$2" >/dev/null
+  if ! railway variable set "$2" --service "$1" >/dev/null 2>&1; then
+    railway variables --service "$1" --set "$2" >/dev/null
+  fi
 }
 
 # ─── plugqueue-api ─────────────────────────────────────────
