@@ -40,6 +40,13 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // Do NOT cache API responses — queue data must always be fresh
       },
+      // Register the service worker in `npm run dev:web` too, otherwise
+      // `navigator.serviceWorker.ready` never resolves and push subscribe hangs.
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html',
+      },
     }),
   ],
   resolve: {

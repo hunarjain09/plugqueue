@@ -130,6 +130,29 @@ app.post('/join', turnstileMiddleware, async (c) => {
       );
     }
 
+    // One active entry per device, per station (blocks the "refresh + new plate"
+    // abuse vector). Skipped in development so we can exercise the flow locally.
+    if (process.env.NODE_ENV !== 'development') {
+      const { rows: deviceExisting } = await client.query(
+        `select id from queue_entries
+         where station_id = $1 and device_hash = $2 and status in ('waiting', 'notified')`,
+        [stationId, device_hash]
+      );
+
+      if (deviceExisting.length > 0) {
+        await client.query('ROLLBACK');
+        client.release();
+        return c.json(
+          {
+            ok: false,
+            error: 'This device already has an active queue entry at this station.',
+            code: 'SAME_DEVICE_ACTIVE',
+          },
+          409
+        );
+      }
+    }
+
     const { rows } = await client.query(
       `insert into queue_entries (station_id, plate_display, plate_hash, spot_id, device_hash, push_sub_id)
        values ($1, $2, $3, $4, $5, $6)

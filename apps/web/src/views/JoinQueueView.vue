@@ -142,6 +142,28 @@ async function submitJoin() {
     <TopBar title="JOIN QUEUE" show-back />
 
     <main class="max-w-md mx-auto px-6 pt-8 space-y-8">
+      <!-- Location permission banner -->
+      <section
+        v-if="geo.error.value && !geo.loading.value"
+        class="bg-error-container/30 border border-error/30 rounded-2xl p-4 flex items-start gap-3"
+      >
+        <span class="material-symbols-outlined text-error mt-0.5">location_off</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-on-surface text-sm font-semibold">Location access needed</p>
+          <p class="text-on-surface-variant text-xs mt-1 leading-relaxed">
+            We use your location to confirm you're physically at this station — required to join the queue.
+            If iOS already denied, open <span class="font-semibold">Settings → Safari → Location</span>
+            and allow, then tap Retry.
+          </p>
+          <button
+            class="mt-3 text-primary text-xs font-bold uppercase tracking-widest active:opacity-60"
+            @click="geo.getCurrentPosition().catch(() => {})"
+          >
+            Retry
+          </button>
+        </div>
+      </section>
+
       <!-- Camera/OCR Screen -->
       <section v-if="showCamera" class="relative -mx-6 -mt-8">
         <div class="relative bg-black aspect-[4/3] flex items-center justify-center overflow-hidden">

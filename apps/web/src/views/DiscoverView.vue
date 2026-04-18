@@ -40,19 +40,25 @@ onMounted(async () => {
     <TopBar title="PLUGQUEUE" />
 
     <main class="max-w-md mx-auto px-6 pt-8 space-y-8">
-      <!-- Hero search -->
-      <section class="space-y-4">
-        <div>
-          <h2 class="text-2xl font-bold tracking-tight text-on-surface">Find a Charger</h2>
-          <p class="text-on-surface-variant text-sm mt-1">Nearby stations with live queue data</p>
+      <!-- Hero search (disabled — MVP ships with one station) -->
+      <section class="space-y-4 opacity-50 pointer-events-none select-none" aria-disabled="true">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-on-surface">Find a Charger</h2>
+            <p class="text-on-surface-variant text-sm mt-1">Nearby stations with live queue data</p>
+          </div>
+          <span class="shrink-0 mt-1 bg-surface-container-high text-on-surface-variant px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+            Coming soon
+          </span>
         </div>
         <div class="relative">
           <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
           <input
-            v-model="searchQuery"
             type="text"
             placeholder="Search charging hubs..."
-            class="w-full bg-surface-container-high border-none rounded-full pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-primary-container transition-all placeholder:text-outline/50"
+            disabled
+            tabindex="-1"
+            class="w-full bg-surface-container-high border-none rounded-full pl-11 pr-4 py-3.5 text-sm placeholder:text-outline/50 cursor-not-allowed"
           />
         </div>
       </section>
