@@ -24,8 +24,9 @@ create index events_type_idx on analytics_events(event_type, created_at desc);
 create index events_session_idx on analytics_events(session_id, created_at);
 create index events_station_idx on analytics_events(station_id, created_at desc) where station_id is not null;
 create index events_page_idx on analytics_events(page, created_at desc) where page is not null;
--- Daily rollup queries
-create index events_daily_idx on analytics_events(date_trunc('day', created_at), event_type);
+-- Daily rollup queries — cast through UTC so the expression is IMMUTABLE.
+-- Plain date_trunc('day', timestamptz) is only STABLE (depends on session TZ).
+create index events_daily_idx on analytics_events(((created_at at time zone 'UTC')::date), event_type);
 
 -- Event types:
 --   page_view      — user visited a page

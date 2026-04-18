@@ -4,7 +4,7 @@
     "builder": "RAILPACK"
   },
   "deploy": {
-    "startCommand": "node dist/index.js",
+    "startCommand": "node apps/cron/dist/index.js",
     "cronSchedule": "*/5 * * * *",
     "restartPolicyType": "NEVER"
   }
