@@ -11,6 +11,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
     "clean": "turbo clean",
     "dev:api": "turbo dev --filter=@plugqueue/api",
     "dev:web": "turbo dev --filter=@plugqueue/web",
