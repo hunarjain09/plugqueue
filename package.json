@@ -15,7 +15,10 @@
     "clean": "turbo clean",
     "dev:api": "turbo dev --filter=@plugqueue/api",
     "dev:web": "turbo dev --filter=@plugqueue/web",
-    "dev:worker": "turbo dev --filter=@plugqueue/worker"
+    "dev:worker": "turbo dev --filter=@plugqueue/worker",
+    "start:api": "node apps/api/dist/index.js",
+    "start:worker": "node apps/worker/dist/index.js",
+    "start:cron": "node apps/cron/dist/index.js"
   },
   "devDependencies": {
     "turbo": "^2.4.0",
