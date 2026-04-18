@@ -1,0 +1,26 @@
+{
+  "id": "lawrence-oakmead",
+  "name": "Lawrence Oakmead Supercharger",
+  "rows": [
+    {
+      "label": "A",
+      "stalls": [
+        { "label": "A1", "x": 0, "y": 0 },
+        { "label": "A2", "x": 1, "y": 0 },
+        { "label": "A3", "x": 2, "y": 0 },
+        { "label": "A4", "x": 3, "y": 0 }
+      ]
+    },
+    {
+      "label": "B",
+      "stalls": [
+        { "label": "B1", "x": 0, "y": 1 },
+        { "label": "B2", "x": 1, "y": 1 },
+        { "label": "B3", "x": 2, "y": 1 },
+        { "label": "B4", "x": 3, "y": 1 }
+      ]
+    }
+  ],
+  "cols": 4,
+  "image_overlay": null
+}

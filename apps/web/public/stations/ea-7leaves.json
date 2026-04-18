@@ -1,0 +1,45 @@
+{
+  "id": "ea-7leaves",
+  "name": "Electrify America — 7 Leaves Cafe",
+  "address": "540-548 Lawrence Expy, Sunnyvale, CA 94085",
+  "provider": "Electrify America",
+  "aerial_image": "/stations/ea-7leaves-aerial.png",
+  "stalls": [
+    {
+      "label": "1",
+      "connector": "CCS / CHAdeMO",
+      "max_kw": 150,
+      "x_pct": 38,
+      "y_pct": 85,
+      "width_pct": 10,
+      "height_pct": 10
+    },
+    {
+      "label": "2",
+      "connector": "CCS / CHAdeMO",
+      "max_kw": 150,
+      "x_pct": 49,
+      "y_pct": 85,
+      "width_pct": 10,
+      "height_pct": 10
+    },
+    {
+      "label": "3",
+      "connector": "CCS",
+      "max_kw": 350,
+      "x_pct": 60,
+      "y_pct": 85,
+      "width_pct": 10,
+      "height_pct": 10
+    },
+    {
+      "label": "4",
+      "connector": "CCS",
+      "max_kw": 350,
+      "x_pct": 71,
+      "y_pct": 85,
+      "width_pct": 10,
+      "height_pct": 10
+    }
+  ]
+}

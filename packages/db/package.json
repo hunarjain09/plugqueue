@@ -1,0 +1,9 @@
+{
+  "name": "@plugqueue/db",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "migrate": "cat migrations/*.sql | psql $DATABASE_URL",
+    "seed": "psql $DATABASE_URL < seed.sql"
+  }
+}
