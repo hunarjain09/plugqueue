@@ -31,7 +31,7 @@ async function toggleNotifications() {
   try {
     const id = await push.subscribe();
     if (id) {
-      trackFeatureUse('push_subscribe', { ms: Math.round(performance.now() - t0) });
+      trackFeatureUse('push_subscribe', undefined, { ms: Math.round(performance.now() - t0) });
     } else {
       trackError('push_subscribe_denied', 'topbar', { permission: push.permission.value });
     }
