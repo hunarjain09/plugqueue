@@ -11,7 +11,8 @@ values (
   --   lat=37.383899, lng=-121.995249. The earlier 37.3884/-121.9915 was
   --   ~600m off (address geocode hit the wrong corner of the plaza).
   ST_SetSRID(ST_MakePoint(-121.995249, 37.383899), 4326)::geography,
-  200,
+  1609, -- 1 mile (≈ 1609 m) — generous to accommodate GPS drift + plaza layout
+
   false
 ) on conflict (id) do nothing;
 
