@@ -165,13 +165,17 @@ app.post('/join', turnstileMiddleware, async (c) => {
     );
     inserted = rows;
 
-    // Get position inside the same transaction for consistency
-    // Use (joined_at, id) for deterministic tie-breaking
+    // Get position inside the same transaction. Reference the just-inserted
+    // row by id so the timestamp comparison stays purely inside Postgres —
+    // passing a JS Date as a parameter loses microseconds and makes the
+    // equality check miss the entry we just inserted (position would be 0).
     const { rows: posRows } = await client.query(
       `select count(*) as position from queue_entries
        where station_id = $1 and status = 'waiting'
-         and (joined_at < $2 or (joined_at = $2 and id <= $3))`,
-      [stationId, inserted[0].joined_at, inserted[0].id]
+         and (joined_at, id) <= (
+           select joined_at, id from queue_entries where id = $2
+         )`,
+      [stationId, inserted[0].id]
     );
     position = parseInt(posRows[0].position);
 
