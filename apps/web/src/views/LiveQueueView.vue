@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useStationStore } from '@/stores/station';
 import { useWebSocket } from '@/composables/useWebSocket';
@@ -47,6 +47,19 @@ function maskPlate(plate: string) {
   if (plate.length <= 3) return plate;
   return plate.slice(0, -3) + '***';
 }
+
+// If the user's own entry transitions to 'notified' (via websocket broadcast),
+// send them to YourTurnView so they can confirm. Without this, a user who
+// stays on the app never leaves LiveQueueView — the only way to reach
+// YourTurnView was tapping the push.
+watch(queue, (entries) => {
+  const myId = store.myEntry?.entry_id;
+  if (!myId || store.myEntry?.station_id !== stationId) return;
+  const me = entries.find((e) => e.id === myId);
+  if (me?.status === 'notified' && route.name !== 'notify') {
+    router.push(`/s/${stationId}/notify`);
+  }
+}, { deep: true });
 </script>
 
 <template>
