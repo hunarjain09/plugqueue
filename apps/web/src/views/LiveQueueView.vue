@@ -116,8 +116,16 @@ watch(queue, (entries) => {
             'p-5 rounded-[1.5rem] flex items-center justify-between transition-colors',
             store.myEntry?.entry_id === entry.id
               ? 'bg-surface-container-lowest shadow-sm border-2 border-primary-container ring-8 ring-primary-container/5 scale-[1.02]'
-              : 'bg-surface-container-low'
+              : 'bg-surface-container-low',
+            store.myEntry?.entry_id === entry.id && entry.status === 'notified'
+              ? 'cursor-pointer active:scale-[0.99]'
+              : ''
           ]"
+          :role="store.myEntry?.entry_id === entry.id && entry.status === 'notified' ? 'button' : undefined"
+          :tabindex="store.myEntry?.entry_id === entry.id && entry.status === 'notified' ? 0 : undefined"
+          :aria-label="store.myEntry?.entry_id === entry.id && entry.status === 'notified' ? 'Tap to confirm your charging spot' : undefined"
+          @click="store.myEntry?.entry_id === entry.id && entry.status === 'notified' ? router.push(`/s/${stationId}/notify`) : null"
+          @keydown.enter="store.myEntry?.entry_id === entry.id && entry.status === 'notified' ? router.push(`/s/${stationId}/notify`) : null"
         >
           <div class="flex items-center gap-4">
             <div :class="[
@@ -156,6 +164,14 @@ watch(queue, (entries) => {
               entry.status === 'notified' ? 'text-primary' : 'text-on-surface-variant/40'
             ]">
               {{ entry.status === 'notified' ? 'Notified' : 'Waiting' }}
+            </span>
+            <!-- Tap-to-confirm hint (only on the current user's notified card) -->
+            <span
+              v-if="store.myEntry?.entry_id === entry.id && entry.status === 'notified'"
+              class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-tighter text-primary"
+            >
+              Tap to confirm
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
             </span>
           </div>
         </div>
