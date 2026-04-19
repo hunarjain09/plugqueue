@@ -3,7 +3,7 @@
   "buildCommand": "cd ../.. && npm ci && npx turbo build --filter=@plugqueue/web",
   "outputDirectory": "dist",
   "installCommand": "echo 'deferred to buildCommand so it runs from monorepo root'",
-  "framework": null,
+  "framework": "vite",
   "cleanUrls": true,
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
