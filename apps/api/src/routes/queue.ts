@@ -47,7 +47,11 @@ app.post('/join', turnstileMiddleware, async (c) => {
   }
 
   const station = stationRows[0];
-  if (parseFloat(station.distance_m) > station.geofence_m) {
+  // DEV bypass: set DEV_BYPASS_GEOFENCE=true on the api service to skip the
+  // distance check so we can exercise the join flow from anywhere. Keep OFF
+  // in real production.
+  const bypassGeofence = process.env.DEV_BYPASS_GEOFENCE === 'true';
+  if (!bypassGeofence && parseFloat(station.distance_m) > station.geofence_m) {
     return c.json(
       {
         ok: false,
