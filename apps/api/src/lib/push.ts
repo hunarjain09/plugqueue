@@ -33,7 +33,11 @@ export async function sendPushNotification(
         endpoint: sub.endpoint,
         keys: { p256dh: sub.p256dh, auth: sub.auth },
       },
-      JSON.stringify(payload)
+      JSON.stringify(payload),
+      {
+        urgency: 'high',
+        TTL: 300,
+      }
     );
     await pool.query(
       'update push_subscriptions set last_used_at = now() where id = $1',

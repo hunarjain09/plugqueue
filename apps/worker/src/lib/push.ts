@@ -34,7 +34,15 @@ export async function sendPushNotification(
         endpoint: sub.endpoint,
         keys: { p256dh: sub.p256dh, auth: sub.auth },
       },
-      JSON.stringify(payload)
+      JSON.stringify(payload),
+      {
+        // iOS (APNs) strictly needs high urgency to wake + display
+        // immediately. Default ('normal') can be silently batched or
+        // dropped. TTL = 5 minutes — past that the notification is
+        // stale anyway (we have a 3-min confirm window).
+        urgency: 'high',
+        TTL: 300,
+      }
     );
     await pool.query(
       'update push_subscriptions set last_used_at = now() where id = $1',
