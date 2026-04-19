@@ -7,8 +7,10 @@ values (
   'Electrify America — 7 Leaves Cafe',
   'Electrify America',
   '540-548 Lawrence Expy, Sunnyvale, CA 94085',
-  -- Plus Code: 92M3+GV Sunnyvale, California
-  ST_SetSRID(ST_MakePoint(-121.9915, 37.3884), 4326)::geography,
+  -- Coords verified on-site at the chargers (Apr 2026):
+  --   lat=37.383899, lng=-121.995249. The earlier 37.3884/-121.9915 was
+  --   ~600m off (address geocode hit the wrong corner of the plaza).
+  ST_SetSRID(ST_MakePoint(-121.995249, 37.383899), 4326)::geography,
   200,
   false
 ) on conflict (id) do nothing;
