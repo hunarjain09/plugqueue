@@ -259,3 +259,84 @@ fix(web): trackFeatureUse takes (name, stationId?, properties?)
 The TopBar's push_subscribe tracking passed properties in the
 stationId slot. Railway build failed with TS2345.
 ```
+
+---
+
+## 🧯 Post-mortems — deploy pitfalls we already hit
+
+These cost us a lot of time; don't repeat them.
+
+### 1. `vercel link --yes` auto-creates a new project
+Running `vercel link --yes` (or any first-time `vercel` command) in a fresh directory with no `.vercel/` folder creates a **new Vercel project named after the directory**. It will NOT auto-join your existing project.
+
+**How to link to an existing project:**
+```bash
+cd apps/web
+vercel link --project plugqueue-web
+```
+
+### 2. `vercel --prod` from repo root triggers services auto-detection
+From the monorepo root, Vercel detects multiple apps (`apps/api`, `apps/web`) and auto-creates a multi-service `vercel.json` + a new project. It will try to host the Hono api as Vercel Functions — which breaks because our api uses WebSocket + Postgres LISTEN/NOTIFY, neither of which works in serverless.
+
+**Only run `vercel --prod` from `apps/web`**, with Root Directory unset in the project (so the CLI and the dashboard agree on the path).
+
+### 3. `vercel --prod` from `apps/web` when Root Directory is set to `apps/web`
+Error: `~/Downloads/plugqueue/apps/web/apps/web does not exist`. Vercel appends its Root Directory setting to the CWD.
+
+**Fix:** Either (a) unset Root Directory in the dashboard and deploy from `apps/web`, or (b) keep Root Directory and deploy from repo root (but see #2 — the root triggers services auto-detect).
+
+Pragmatic workaround we settled on: let the GitHub integration auto-deploy on `git push`. Skip local `vercel --prod` unless you specifically need an unshipped-code preview.
+
+### 4. Leading whitespace in Vercel env var values breaks fetches
+Pasting env var values into the Vercel dashboard can introduce a leading space. Vite bakes env vars literally into the bundle at build time, so you end up with `fetch(" https://...")` which throws `Failed to fetch` (no network error, no CORS — just a malformed URL).
+
+**Diagnosis:** Grep the built JS bundle for your API URL:
+```bash
+BUNDLE=$(curl -s https://<vercel-url>/ | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js' | head -1)
+curl -s "https://<vercel-url>/$BUNDLE" | grep -oE '" https://[^"]+"'
+```
+If you see a quoted string with a leading space → the env var is contaminated.
+
+**Fix via CLI (avoids paste issues):**
+```bash
+vercel env rm VITE_API_BASE_URL production --yes
+echo "https://plugqueue-production.up.railway.app" | vercel env add VITE_API_BASE_URL production
+vercel --prod --yes   # or just push to trigger rebuild
+```
+
+### 5. Custom headers from the frontend must be allowed by the server's CORS config
+We kept a `ngrok-skip-browser-warning: true` header in `apps/web/src/lib/api.ts` as a ngrok-tier workaround. After deploy, Hono's CORS middleware only allows `Content-Type, x-device-hash` in `Access-Control-Allow-Headers`, so preflight blocked every API call.
+
+**Lesson:** Any custom request header added to the client must be whitelisted on the server (Hono's `cors({ allowHeaders: [...] })`). Or just don't add the header if it's only needed for dev.
+
+### 6. Vercel's Deployment Protection (team plan default)
+Team-plan Vercel projects enable "Vercel Authentication" on new deployments by default, which gates every URL behind Vercel's SSO wall. `curl` sees `HTTP/2 401 + _vercel_sso_nonce cookie`; browsers see a 404-looking page that's actually the redirect to login.
+
+**Fix:** Project → Settings → Deployment Protection → set "Vercel Authentication" to **Only Preview Deployments** (or Off). Production URLs become publicly reachable immediately; no redeploy needed.
+
+### 7. Minimal `vercel.json` for SPA routing
+After much config thrashing, the working config for a Vite SPA in a monorepo is exactly this. **Anything extra is suspect — especially `cleanUrls: true` and `framework: null`.**
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && npm ci && npx turbo build --filter=@plugqueue/web",
+  "outputDirectory": "dist",
+  "installCommand": "echo 'deferred to buildCommand so it runs from monorepo root'",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
+}
+```
+
+`cleanUrls: true` intercepted the filesystem lookup before the rewrite could fire — every deep route 404'd even with a correct rewrite block.
+
+### 8. Generic debug playbook for Vercel 404s (in order)
+When a deep route 404s:
+1. `curl -sI <url>` — look for `401` + `_vercel_sso_nonce` → deployment protection
+2. Test the deploy-hash URL directly (`plugqueue-xxx-...vercel.app`) not just the alias — isolates alias/DNS bugs
+3. `vercel inspect <url> --logs | head -5` — confirm the right commit deployed
+4. Strip `vercel.json` to only `rewrites: [{ "source": "/(.*)", "destination": "/" }]` and redeploy
+5. Add config back one field at a time
+
+---

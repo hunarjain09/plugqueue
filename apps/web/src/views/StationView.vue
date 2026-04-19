@@ -30,7 +30,7 @@ const stallsByStatus = computed(() => {
 
 <template>
   <div class="min-h-screen pb-32">
-    <TopBar :title="s?.name ?? 'Station'" show-back />
+    <TopBar :title="s?.name ?? 'Station'" />
 
     <main class="max-w-md mx-auto px-6 pt-8 space-y-8">
       <!-- Loading -->
