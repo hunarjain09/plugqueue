@@ -19,7 +19,7 @@ export function startNotificationTimer() {
       // ── 1. Send "Are you plugged in?" reminder ──────────
       // Entries notified > REMINDER_SEC ago that haven't been reminded yet
       const { rows: reminderCandidates } = await pool.query(
-        `select id, push_sub_id, station_id
+        `select id, push_sub_id, device_hash, station_id
          from queue_entries
          where status = 'notified'
            and notified_at < now() - interval '1 second' * $1
@@ -31,9 +31,20 @@ export function startNotificationTimer() {
         if (remindedEntries.has(entry.id)) continue;
         remindedEntries.set(entry.id, Date.now());
 
-        if (entry.push_sub_id) {
+        // Prefer explicit push_sub_id, fall back to latest subscription for the device
+        let pushSubId = entry.push_sub_id;
+        if (!pushSubId && entry.device_hash) {
+          const { rows: subRows } = await pool.query(
+            `select id from push_subscriptions where device_hash = $1
+             order by created_at desc limit 1`,
+            [entry.device_hash]
+          );
+          if (subRows.length > 0) pushSubId = subRows[0].id;
+        }
+
+        if (pushSubId) {
           const timeLeft = NOTIFICATION_CONFIRM_WINDOW_SEC - NOTIFICATION_REMINDER_SEC;
-          await sendPushNotification(entry.push_sub_id, {
+          await sendPushNotification(pushSubId, {
             title: 'Are you plugged in?',
             body: `Confirm now or your spot will be given to the next driver in ${timeLeft} seconds.`,
             url: `${process.env.WEB_URL ?? 'https://plugqueue.app'}/s/${entry.station_id}/notify`,
@@ -49,7 +60,7 @@ export function startNotificationTimer() {
          set status = 'expired'
          where status = 'notified'
            and notified_at < now() - interval '1 second' * $1
-         returning id, station_id, push_sub_id`,
+         returning id, station_id, push_sub_id, device_hash`,
         [NOTIFICATION_CONFIRM_WINDOW_SEC]
       );
 
@@ -64,8 +75,18 @@ export function startNotificationTimer() {
         for (const entry of expired) {
           remindedEntries.delete(entry.id);
 
-          if (entry.push_sub_id) {
-            await sendPushNotification(entry.push_sub_id, {
+          let pushSubId = entry.push_sub_id;
+          if (!pushSubId && entry.device_hash) {
+            const { rows: subRows } = await pool.query(
+              `select id from push_subscriptions where device_hash = $1
+               order by created_at desc limit 1`,
+              [entry.device_hash]
+            );
+            if (subRows.length > 0) pushSubId = subRows[0].id;
+          }
+
+          if (pushSubId) {
+            await sendPushNotification(pushSubId, {
               title: 'Spot given to next driver',
               body: `You didn't confirm within ${NOTIFICATION_CONFIRM_WINDOW_SEC / 60} minutes. The next person in queue has been notified.`,
               tag: `expired-${entry.id}`,

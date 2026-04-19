@@ -11,7 +11,10 @@ const pool = new pg.Pool({
 
 async function reconcile() {
   logger.info('Running reconciliation...');
-  // Use EXISTS to avoid cross-product duplicates when multiple stalls are available
+  // Any station with both a waiting entry AND an available stall needs advancing.
+  // The previous version required status_updated_at > qe.joined_at, which
+  // missed the case where a stall was already available when the user joined
+  // (the NOTIFY had fired before the user was in the queue).
   const { rows } = await pool.query(`
     select distinct qe.station_id
     from queue_entries qe
@@ -20,7 +23,6 @@ async function reconcile() {
         select 1 from stalls s
         where s.station_id = qe.station_id
           and s.current_status = 'available'
-          and s.status_updated_at > qe.joined_at
       )
   `);
 
@@ -39,7 +41,7 @@ async function advanceQueue(stationId: string) {
     await client.query('BEGIN');
 
     const { rows } = await client.query(
-      `select id, push_sub_id, plate_hash
+      `select id, push_sub_id, plate_hash, device_hash
        from queue_entries
        where station_id = $1 and status = 'waiting'
        order by joined_at asc
@@ -64,13 +66,29 @@ async function advanceQueue(stationId: string) {
 
     await client.query('COMMIT');
 
-    if (entry.push_sub_id) {
-      await sendPushNotification(pool, entry.push_sub_id, {
+    // Find the right push subscription. Prefer explicit push_sub_id if the
+    // client threaded it through at join time; otherwise look up by
+    // device_hash (there's only one subscription per device in practice).
+    let pushSubId = entry.push_sub_id;
+    if (!pushSubId && entry.device_hash) {
+      const { rows: subRows } = await pool.query(
+        `select id from push_subscriptions where device_hash = $1
+         order by created_at desc limit 1`,
+        [entry.device_hash]
+      );
+      if (subRows.length > 0) pushSubId = subRows[0].id;
+    }
+
+    if (pushSubId) {
+      await sendPushNotification(pool, pushSubId, {
         title: "It's your turn!",
         body: `A stall just opened. Plug in and confirm within 3 minutes.`,
         url: `${process.env.WEB_URL ?? 'https://plugqueue.app'}/s/${stationId}/notify`,
         tag: `turn-${entry.id}`,
       });
+    } else {
+      logger.warn({ entryId: entry.id, deviceHash: entry.device_hash?.slice(0, 12) },
+        'Queue advanced but no push subscription found for this device');
     }
 
     logger.info({ entryId: entry.id, stationId }, 'Queue advanced, user notified');

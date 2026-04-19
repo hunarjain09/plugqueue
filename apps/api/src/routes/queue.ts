@@ -176,6 +176,31 @@ app.post('/join', turnstileMiddleware, async (c) => {
     position = parseInt(posRows[0].position);
 
     await client.query('COMMIT');
+
+    // If a stall is currently available and we're at the head of the queue,
+    // fire pg_notify so the worker advances us immediately instead of making
+    // us wait for the next stall_changed event or 5-minute reconciliation.
+    if (position === 1) {
+      const { rows: availRows } = await pool.query(
+        `select label from stalls
+         where station_id = $1 and current_status = 'available'
+         limit 1`,
+        [stationId]
+      );
+      if (availRows.length > 0) {
+        await pool.query(
+          `select pg_notify('stall_changed', $1)`,
+          [JSON.stringify({
+            station_id: stationId,
+            stall_label: availRows[0].label,
+            old_status: 'available',
+            new_status: 'available',
+            changed_at: new Date().toISOString(),
+            reason: 'join_with_available_stall',
+          })]
+        );
+      }
+    }
   } catch (err: any) {
     await client.query('ROLLBACK');
     // Unique constraint violation = duplicate (race condition caught by DB)
