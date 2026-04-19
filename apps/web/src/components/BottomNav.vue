@@ -12,7 +12,7 @@ const stationId = computed(() =>
 );
 
 const tabs = computed(() => [
-  { name: 'discover', icon: 'map', label: 'Explore', path: '/' },
+  { name: 'discover', icon: 'map', label: 'Explore', path: '/discover' },
   {
     name: 'queue',
     icon: 'hourglass_empty',
