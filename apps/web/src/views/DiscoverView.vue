@@ -11,25 +11,37 @@ const geo = useGeolocation();
 const locationReady = ref(false);
 const searchQuery = ref('');
 
-const filteredStations = computed(() => {
-  if (!searchQuery.value.trim()) return store.nearbyStations;
+// Single-station MVP: ea-7leaves is always shown regardless of location or
+// API response. We merge it with whatever fetchNearby returns so we don't
+// show duplicates if the API already returned it.
+const EA7LEAVES_STUB = {
+  id: 'ea-7leaves',
+  name: 'Electrify America — 7 Leaves Cafe',
+  provider: 'Electrify America',
+  address: '540-548 Lawrence Expy, Sunnyvale, CA 94085',
+  location: { lat: 37.3884, lng: -121.9915 },
+};
+
+const visibleStations = computed(() => {
+  const apiStations = store.nearbyStations;
+  const hasEa7leaves = apiStations.some((s) => s.id === 'ea-7leaves');
+  const base = hasEa7leaves ? apiStations : [EA7LEAVES_STUB, ...apiStations];
+  if (!searchQuery.value.trim()) return base;
   const q = searchQuery.value.toLowerCase();
-  return store.nearbyStations.filter(
+  return base.filter(
     (s) =>
       s.name.toLowerCase().includes(q) ||
       s.provider.toLowerCase().includes(q) ||
-      s.address?.toLowerCase().includes(q)
+      (s.address ?? '').toLowerCase().includes(q)
   );
 });
 
 onMounted(async () => {
+  locationReady.value = true;
   try {
     const pos = await geo.getCurrentPosition();
-    locationReady.value = true;
     await store.fetchNearby(pos.lat, pos.lng);
   } catch {
-    // Fallback: station coords (single-station MVP — always show ea-7leaves)
-    locationReady.value = true;
     await store.fetchNearby(37.3884, -121.9915);
   }
 });
@@ -100,12 +112,12 @@ onMounted(async () => {
         <!-- Stations -->
         <div v-else class="space-y-4">
           <StationCard
-            v-for="s in filteredStations"
+            v-for="s in visibleStations"
             :key="s.id"
             :station="s"
           />
 
-          <div v-if="filteredStations.length === 0 && !store.loading" class="text-center py-12">
+          <div v-if="visibleStations.length === 0 && !store.loading" class="text-center py-12">
             <span class="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-4">ev_station</span>
             <p class="text-on-surface-variant">No stations found nearby</p>
           </div>

@@ -29,3 +29,6 @@ apps/web/src/views/*.vue.js.map
 .vercel
 preview.webp
 labels_my-project-name_2026-04-19-01-40-28.csv
+
+# Local dev notes — not pushed to remote
+MULTI_STATION.md
