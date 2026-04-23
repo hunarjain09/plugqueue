@@ -5,7 +5,7 @@ import { useStationStore } from '@/stores/station';
 import { useGeolocation } from '@/composables/useGeolocation';
 import TopBar from '@/components/TopBar.vue';
 import TurnstileWidget from '@/components/TurnstileWidget.vue';
-import AerialSpotSelector from '@/components/AerialSpotSelector.vue';
+import LotMap, { type LotMapData } from '@/components/LotMap.vue';
 import { trackFlowStep, trackFlowComplete, trackFlowAbandon, trackFeatureUse, trackError } from '@/composables/useAnalytics';
 
 const route = useRoute();
@@ -20,6 +20,7 @@ const submitting = ref(false);
 const errorMsg = ref<string | null>(null);
 const step = ref<'plate' | 'spot' | 'confirm'>('plate');
 const turnstileToken = ref<string | null>(null);
+const lotMapData = ref<LotMapData | null>(null);
 
 // Camera/OCR state
 const showCamera = ref(false);
@@ -31,6 +32,10 @@ onMounted(async () => {
   await store.fetchStation(stationId);
   try {
     await geo.getCurrentPosition();
+  } catch {}
+  try {
+    const res = await fetch(`/stations/${stationId}.json`);
+    if (res.ok) lotMapData.value = await res.json();
   } catch {}
 });
 
@@ -100,7 +105,7 @@ function nextStep() {
     }
     errorMsg.value = null;
     trackFlowStep('plate_confirmed', stationId, { method: 'manual' });
-    step.value = availableSpots.value.length > 0 ? 'spot' : 'confirm';
+    step.value = 'spot';
   } else if (step.value === 'spot') {
     trackFlowStep('spot_selected', stationId, { spot: selectedSpot.value });
     step.value = 'confirm';
@@ -249,27 +254,52 @@ async function submitJoin() {
         </section>
       </template>
 
-      <!-- Step 2: Spot Selection (Aerial Map) -->
+      <!-- Step 2: Parking Spot Selection -->
       <template v-if="step === 'spot'">
-        <section class="space-y-6">
+        <section class="space-y-5">
           <div>
-            <h2 class="text-2xl font-bold tracking-tight text-on-surface mb-2">Tap your spot on the map</h2>
-            <p class="text-on-surface-variant text-sm">Select the stall where you're parked or waiting.</p>
+            <h2 class="text-2xl font-bold tracking-tight text-on-surface mb-2">Where are you parked?</h2>
+            <p class="text-on-surface-variant text-sm">Tap your parking spot — others in the queue can see where everyone is waiting.</p>
           </div>
 
-          <!-- Aerial map with tappable stall overlays -->
-          <AerialSpotSelector
-            :station-id="stationId"
-            :stalls="stalls"
-            :selected-spot="selectedSpot"
-            @select="(label: string) => selectedSpot = label"
+          <!-- Lot map selector -->
+          <LotMap
+            v-if="lotMapData"
+            mode="join"
+            :lot-map="lotMapData"
+            :selected-spot-id="selectedSpot"
+            @select="(id: string) => selectedSpot = id"
           />
+          <div v-else class="aspect-[4/3] bg-surface-container-low rounded-2xl animate-pulse" />
+
+          <!-- Confirmation sheet when a spot is selected -->
+          <Transition name="spot-sheet">
+            <div
+              v-if="selectedSpot"
+              class="bg-surface-container-lowest border border-surface-container rounded-2xl p-5 space-y-3 shadow-sm"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-semibold text-on-surface">Confirm your spot</span>
+                <span class="bg-primary-container text-on-primary font-black text-sm px-3 py-1 rounded-full">{{ selectedSpot }}</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-on-surface-variant uppercase tracking-widest font-bold">Row</span>
+                <span class="font-semibold text-on-surface">{{ selectedSpot.replace(/\d+$/, '') }}</span>
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-on-surface-variant uppercase tracking-widest font-bold">Spot</span>
+                <span class="font-semibold text-on-surface">{{ selectedSpot }}</span>
+              </div>
+            </div>
+          </Transition>
 
           <button
             class="w-full bg-primary-container text-on-primary font-bold py-5 rounded-full shadow-lg shadow-primary/20 flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
             @click="nextStep"
           >
-            <span class="tracking-widest uppercase text-sm">{{ selectedSpot ? `Confirm Stall ${selectedSpot}` : 'Skip Spot Selection' }}</span>
+            <span class="tracking-widest uppercase text-sm">
+              {{ selectedSpot ? `Continue from ${selectedSpot}` : 'Skip — Pick Spot Later' }}
+            </span>
             <span class="material-symbols-outlined">arrow_forward</span>
           </button>
         </section>
@@ -289,7 +319,7 @@ async function submitJoin() {
               <span class="font-mono text-lg font-bold text-on-surface tracking-wider">{{ plate }}</span>
             </div>
             <div v-if="selectedSpot" class="flex justify-between items-center">
-              <span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Spot</span>
+              <span class="text-xs text-on-surface-variant uppercase tracking-widest font-bold">Parked at</span>
               <span class="font-bold text-on-surface">{{ selectedSpot }}</span>
             </div>
             <div class="flex justify-between items-center">
@@ -330,3 +360,15 @@ async function submitJoin() {
     </main>
   </div>
 </template>
+
+<style scoped>
+.spot-sheet-enter-active,
+.spot-sheet-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.spot-sheet-enter-from,
+.spot-sheet-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>

@@ -28,7 +28,7 @@ app.post('/join', turnstileMiddleware, async (c) => {
     return c.json({ ok: false, error: parsed.error.flatten() }, 400);
   }
 
-  const { plate, spot_id, device_hash, push_sub_id, lat, lng } = parsed.data;
+  const { plate, spot_id, waiting_spot_id, device_hash, push_sub_id, lat, lng } = parsed.data;
   const stationId = c.req.query('station_id');
   if (!stationId) {
     return c.json({ ok: false, error: 'station_id query param required' }, 400);
@@ -158,10 +158,10 @@ app.post('/join', turnstileMiddleware, async (c) => {
     }
 
     const { rows } = await client.query(
-      `insert into queue_entries (station_id, plate_display, plate_hash, spot_id, device_hash, push_sub_id)
-       values ($1, $2, $3, $4, $5, $6)
+      `insert into queue_entries (station_id, plate_display, plate_hash, spot_id, waiting_spot_id, device_hash, push_sub_id)
+       values ($1, $2, $3, $4, $5, $6, $7)
        returning id, joined_at, status`,
-      [stationId, maskedPlate, plateHash, spot_id ?? null, device_hash, push_sub_id ?? null]
+      [stationId, maskedPlate, plateHash, spot_id ?? null, waiting_spot_id ?? null, device_hash, push_sub_id ?? null]
     );
     inserted = rows;
 

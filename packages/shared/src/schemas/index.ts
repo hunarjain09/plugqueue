@@ -10,6 +10,7 @@ export const plateSchema = z
 export const joinQueueSchema = z.object({
   plate: plateSchema,
   spot_id: z.string().max(10).optional(),
+  waiting_spot_id: z.string().max(10).optional(),
   device_hash: z.string().min(16).max(128),
   push_sub_id: z.string().optional(),
   lat: z.number().min(-90).max(90),

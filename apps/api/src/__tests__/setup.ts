@@ -50,11 +50,22 @@ beforeAll(async () => {
     create table if not exists queue_entries (
       id uuid primary key default uuid_generate_v4(),
       station_id text not null references stations(id) on delete cascade,
-      plate text not null, plate_hash text not null, spot_id text,
+      plate text,
+      plate_display text not null default '',
+      plate_hash text not null, spot_id text,
+      waiting_spot_id text,
       device_hash text not null, joined_at timestamptz not null default now(),
       status text not null default 'waiting', notified_at timestamptz, push_sub_id text,
       unique (station_id, plate_hash) deferrable initially deferred
     )
+  `);
+  // Idempotent column adds for pre-existing test DBs
+  await pool.query(`alter table queue_entries add column if not exists plate_display text not null default ''`);
+  await pool.query(`alter table queue_entries add column if not exists waiting_spot_id text`);
+  await pool.query(`
+    create unique index if not exists queue_entries_active_waiting_spot_idx
+      on queue_entries (station_id, waiting_spot_id)
+      where status in ('waiting', 'notified') and waiting_spot_id is not null
   `);
   await pool.query(`
     create table if not exists cooldowns (

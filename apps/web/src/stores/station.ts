@@ -69,8 +69,8 @@ export const useStationStore = defineStore('station', () => {
     }
   }
 
-  async function joinQueue(stationId: string, plate: string, spotId: string | undefined, lat: number, lng: number, turnstileToken?: string) {
-    const result = await api.joinQueue(stationId, { plate, spot_id: spotId, lat, lng, turnstile_token: turnstileToken });
+  async function joinQueue(stationId: string, plate: string, waitingSpotId: string | undefined, lat: number, lng: number, turnstileToken?: string) {
+    const result = await api.joinQueue(stationId, { plate, waiting_spot_id: waitingSpotId, lat, lng, turnstile_token: turnstileToken });
     saveMyEntry({ entry_id: result.entry_id, station_id: stationId, position: result.position });
     return result;
   }

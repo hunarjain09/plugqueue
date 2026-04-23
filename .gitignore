@@ -26,3 +26,6 @@ apps/web/src/router/*.js.map
 apps/web/src/router/*.d.ts
 apps/web/src/views/*.vue.js
 apps/web/src/views/*.vue.js.map
+.vercel
+preview.webp
+labels_my-project-name_2026-04-19-01-40-28.csv

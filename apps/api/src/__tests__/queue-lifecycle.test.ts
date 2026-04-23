@@ -10,16 +10,17 @@ function hashPlate(plate: string): string {
 
 async function insertQueueEntry(
   plate: string,
-  opts: { status?: string; device_hash?: string; spot_id?: string; notified_at?: Date } = {}
+  opts: { status?: string; device_hash?: string; spot_id?: string; waiting_spot_id?: string; notified_at?: Date } = {}
 ) {
   const { rows } = await pool.query(
-    `insert into queue_entries (station_id, plate, plate_hash, spot_id, device_hash, status, notified_at)
-     values ('test-station', $1, $2, $3, $4, $5, $6)
+    `insert into queue_entries (station_id, plate, plate_hash, spot_id, waiting_spot_id, device_hash, status, notified_at)
+     values ('test-station', $1, $2, $3, $4, $5, $6, $7)
      returning *`,
     [
       plate,
       hashPlate(plate),
       opts.spot_id ?? null,
+      opts.waiting_spot_id ?? null,
       opts.device_hash ?? 'device-aaa',
       opts.status ?? 'waiting',
       opts.notified_at ?? null,

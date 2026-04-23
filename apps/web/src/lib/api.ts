@@ -61,6 +61,7 @@ export const api = {
   joinQueue(stationId: string, data: {
     plate: string;
     spot_id?: string;
+    waiting_spot_id?: string;
     push_sub_id?: string;
     lat: number;
     lng: number;

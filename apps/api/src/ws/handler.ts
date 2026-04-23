@@ -67,7 +67,7 @@ export function setupWebSocket(server: Server) {
           [stationId]
         ),
         pool.query(
-          `select id, plate_display, spot_id, joined_at, status, notified_at
+          `select id, plate_display, spot_id, waiting_spot_id, joined_at, status, notified_at
            from queue_entries
            where station_id = $1 and status in ('waiting', 'notified')
            order by joined_at asc`,
@@ -175,7 +175,7 @@ async function startListening() {
         for (const [sid, clients] of stationSubs.entries()) {
           if (clients.size === 0) continue;
           const { rows } = await pool.query(
-            `select id, plate_display, spot_id, joined_at, status, notified_at
+            `select id, plate_display, spot_id, waiting_spot_id, joined_at, status, notified_at
              from queue_entries where station_id = $1 and status in ('waiting', 'notified')
              order by joined_at asc`,
             [sid]

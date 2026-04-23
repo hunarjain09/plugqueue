@@ -72,7 +72,7 @@ app.get('/:id', async (c) => {
       [id]
     ),
     pool.query(
-      `select id, plate_display, spot_id, joined_at, status, notified_at
+      `select id, plate_display, spot_id, waiting_spot_id, joined_at, status, notified_at
        from queue_entries
        where station_id = $1 and status in ('waiting', 'notified')
        order by joined_at asc`,

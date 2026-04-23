@@ -7,6 +7,7 @@ import { useGeofenceWatch } from '@/composables/useGeofenceWatch';
 import { getDeviceHash } from '@/lib/api';
 import TopBar from '@/components/TopBar.vue';
 import BottomNav from '@/components/BottomNav.vue';
+import LotMap, { type LotMapData, type LotPin } from '@/components/LotMap.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -24,9 +25,14 @@ const { outsideGeofence, autoLeft } = useGeofenceWatch(sLat, sLng, sGeo);
 
 onMounted(async () => {
   await store.fetchStation(stationId);
+  try {
+    const res = await fetch(`/stations/${stationId}.json`);
+    if (res.ok) lotMapData.value = await res.json();
+  } catch {}
 });
 
 const myDeviceHash = getDeviceHash();
+const lotMapData = ref<LotMapData | null>(null);
 
 const myPosition = computed(() => {
   if (!store.myEntry || store.myEntry.station_id !== stationId) return null;
@@ -37,6 +43,26 @@ const myPosition = computed(() => {
 const availableCount = computed(() =>
   stalls.value.filter((s) => s.current_status === 'available').length
 );
+
+const lotPins = computed<LotPin[]>(() =>
+  queue.value
+    .filter((e) => e.waiting_spot_id)
+    .map((e, idx) => ({
+      entryId: e.id,
+      spotId: e.waiting_spot_id!,
+      position: idx + 1,
+      status: e.status as 'waiting' | 'notified',
+      plateDisplay: e.plate_display,
+      isMe: e.device_hash === myDeviceHash,
+      joinedAt: e.joined_at,
+    }))
+);
+
+const evStatus = computed<Record<string, string>>(() => {
+  const m: Record<string, string> = {};
+  stalls.value.forEach((s) => { m[s.label] = s.current_status; });
+  return m;
+});
 
 const estimatedWait = computed(() => {
   if (!myPosition.value) return null;
@@ -94,6 +120,16 @@ watch(queue, (entries) => {
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Lot map — queue positions pinned to parking spots -->
+      <section v-if="lotMapData">
+        <LotMap
+          mode="live"
+          :lot-map="lotMapData"
+          :pins="lotPins"
+          :ev-status="evStatus"
+        />
       </section>
 
       <!-- Connection status -->

@@ -28,6 +28,7 @@ export interface QueueEntry {
   plate_display: string;
   plate_hash: string;
   spot_id: string | null;
+  waiting_spot_id: string | null;
   device_hash: string;
   joined_at: string;
   status: QueueStatus;
