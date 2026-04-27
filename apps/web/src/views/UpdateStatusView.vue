@@ -57,45 +57,60 @@ function statusIcon(status: string) {
   }
 }
 
+async function processImage(blob: Blob) {
+  ocrProcessing.value = true;
+  errorMsg.value = null;
+  try {
+    const Tesseract = await import('tesseract.js');
+    const worker = await Tesseract.createWorker('eng');
+    const { data } = await worker.recognize(blob);
+    await worker.terminate();
+
+    const text = data.text;
+    const lines = text.split('\n').filter(Boolean);
+    let matched = 0;
+
+    for (const line of lines) {
+      const availMatch = line.match(/(?:stall\s*)?(A\d|B\d|C\d|#?\d+)\D{0,20}?(available|free|open|idle)/i);
+      const useMatch = line.match(/(?:stall\s*)?(A\d|B\d|C\d|#?\d+)\D{0,20}?(in.?use|charging|busy|occupied|unavailable)/i);
+
+      if (availMatch) {
+        const label = availMatch[1].replace('#', '').toUpperCase();
+        const stall = stallStatuses.value.find((s) => s.label === label);
+        if (stall) { stall.status = 'available'; matched++; }
+      }
+      if (useMatch) {
+        const label = useMatch[1].replace('#', '').toUpperCase();
+        const stall = stallStatuses.value.find((s) => s.label === label);
+        if (stall) { stall.status = 'in_use'; matched++; }
+      }
+    }
+
+    if (matched === 0) {
+      errorMsg.value = "Couldn't read stall statuses from image. Tap stalls below to set manually.";
+    }
+  } catch {
+    errorMsg.value = 'OCR failed. Update stalls manually by tapping.';
+  } finally {
+    ocrProcessing.value = false;
+  }
+}
+
 async function handlePaste(event: ClipboardEvent) {
   const items = event.clipboardData?.items;
   if (!items) return;
-
   for (const item of items) {
     if (!item.type.startsWith('image/')) continue;
     const blob = item.getAsFile();
-    if (!blob) continue;
-
-    ocrProcessing.value = true;
-    try {
-      const Tesseract = await import('tesseract.js');
-      const worker = await Tesseract.createWorker('eng');
-      const { data } = await worker.recognize(blob);
-      await worker.terminate();
-
-      // Parse OCR text for stall status patterns
-      const lines = data.text.split('\n').filter(Boolean);
-      for (const line of lines) {
-        const availMatch = line.match(/(A\d|B\d|C\d|#?\d+)\s*[:\-]?\s*(available|free|open)/i);
-        const useMatch = line.match(/(A\d|B\d|C\d|#?\d+)\s*[:\-]?\s*(in.?use|charging|busy|occupied)/i);
-
-        if (availMatch) {
-          const label = availMatch[1].replace('#', '').toUpperCase();
-          const stall = stallStatuses.value.find((s) => s.label === label);
-          if (stall) stall.status = 'available';
-        }
-        if (useMatch) {
-          const label = useMatch[1].replace('#', '').toUpperCase();
-          const stall = stallStatuses.value.find((s) => s.label === label);
-          if (stall) stall.status = 'in_use';
-        }
-      }
-    } catch {
-      errorMsg.value = 'OCR failed. Update stalls manually by tapping.';
-    } finally {
-      ocrProcessing.value = false;
-    }
+    if (blob) await processImage(blob);
   }
+}
+
+async function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (file) await processImage(file);
+  input.value = '';
 }
 
 async function submit() {
@@ -124,19 +139,25 @@ async function submit() {
       </section>
 
       <!-- Upload/Paste Area -->
-      <section class="glass-card rounded-xl p-6 border-dashed border-2 border-primary/30 flex flex-col items-center justify-center gap-4 text-center active:scale-[0.98] transition-all cursor-pointer">
+      <label class="glass-card rounded-xl p-6 border-dashed border-2 border-primary/30 flex flex-col items-center justify-center gap-4 text-center active:scale-[0.98] transition-all cursor-pointer block">
+        <input
+          type="file"
+          accept="image/*"
+          class="sr-only"
+          @change="handleFileChange"
+        />
         <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
           <span class="material-symbols-outlined text-4xl">photo_camera</span>
         </div>
         <div>
-          <p class="font-semibold text-on-surface">Paste or Upload Screenshot</p>
+          <p class="font-semibold text-on-surface">Tap to Upload or Paste Screenshot</p>
           <p class="text-xs text-on-surface-variant mt-1">Host app screenshot (e.g. Tesla, Electrify America)</p>
         </div>
         <div class="flex items-center gap-2 px-3 py-2 bg-surface-container-high rounded-lg text-xs text-on-surface-variant font-medium">
           <span class="material-symbols-outlined text-sm">shield</span>
           Privacy: Images are processed locally and never uploaded.
         </div>
-      </section>
+      </label>
 
       <!-- OCR Processing -->
       <div v-if="ocrProcessing" class="flex items-center gap-3 justify-center py-4">

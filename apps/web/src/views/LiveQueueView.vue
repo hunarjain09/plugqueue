@@ -123,7 +123,13 @@ watch(queue, (entries) => {
       </section>
 
       <!-- Lot map — queue positions pinned to parking spots -->
-      <section v-if="lotMapData">
+      <section v-if="lotMapData" class="space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-on-surface font-bold text-lg tracking-tight">Current Queue</h3>
+          <span class="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">
+            Live lot view
+          </span>
+        </div>
         <LotMap
           mode="live"
           :lot-map="lotMapData"
